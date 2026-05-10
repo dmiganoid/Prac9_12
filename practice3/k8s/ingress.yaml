@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pdf-reports-ingress
+  namespace: pdf-reports
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: pdf-reports.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8000

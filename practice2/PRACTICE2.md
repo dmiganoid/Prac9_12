@@ -106,6 +106,60 @@ curl http://localhost:8002/metrics
 
 ## Примеры curl-запросов
 
+## Генерация PDF
+
+PDF генерируется асинхронно: пользователь создаёт заявку через API Gateway,
+`pdf-worker` забирает задачу из Redis Streams, формирует документ и сохраняет
+его в MinIO. Поэтому сначала нужно создать заявку, затем дождаться статуса
+`SUCCEEDED`, после чего скачать готовый файл.
+
+1. Создать заявку на отчёт:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/reports \
+  -H "Content-Type: application/json" \
+  -d '{
+    "report_type": "sales_summary",
+    "date_from": "2026-01-01",
+    "date_to": "2026-01-31",
+    "filters": {}
+  }'
+```
+
+В ответе будет идентификатор заявки:
+
+```json
+{
+  "report_id": "uuid",
+  "status": "QUEUED"
+}
+```
+
+2. Проверить статус генерации:
+
+```bash
+curl http://localhost:8000/api/v1/reports/<report_id>
+```
+
+Если генерация завершилась успешно, в ответе будет:
+
+```json
+{
+  "status": "SUCCEEDED",
+  "file_key": "reports/<report_id>.pdf"
+}
+```
+
+3. Скачать готовый PDF:
+
+```bash
+curl -o report.pdf http://localhost:8000/api/v1/reports/<report_id>/download
+```
+
+После выполнения команды файл `report.pdf` появится в текущей директории.
+Также его можно увидеть в MinIO Console: http://localhost:9001,
+логин и пароль по умолчанию `minioadmin` / `minioadmin`, bucket `reports`.
+
 Создание отчёта:
 
 ```bash

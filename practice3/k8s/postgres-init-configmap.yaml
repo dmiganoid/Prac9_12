@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-configmap
+  namespace: pdf-reports
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS report_requests (
+        id uuid PRIMARY KEY,
+        report_type varchar NOT NULL,
+        status varchar NOT NULL,
+        params jsonb NOT NULL,
+        file_key varchar NULL,
+        error_message text NULL,
+        created_at timestamp NOT NULL DEFAULT now(),
+        started_at timestamp NULL,
+        finished_at timestamp NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS customers (
+        id uuid PRIMARY KEY,
+        name varchar NOT NULL,
+        email varchar NOT NULL,
+        region varchar NOT NULL,
+        created_at timestamp NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS orders (
+        id uuid PRIMARY KEY,
+        customer_id uuid REFERENCES customers(id),
+        amount numeric NOT NULL,
+        status varchar NOT NULL,
+        created_at timestamp NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_report_requests_status ON report_requests(status);
+    CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+    CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
+
+    INSERT INTO customers (id, name, email, region, created_at) VALUES
+        ('11111111-1111-1111-1111-111111111111', 'Alice North', 'alice.north@example.com', 'North', '2025-12-01 09:00:00'),
+        ('22222222-2222-2222-2222-222222222222', 'Boris South', 'boris.south@example.com', 'South', '2025-12-02 09:00:00'),
+        ('33333333-3333-3333-3333-333333333333', 'Carla East', 'carla.east@example.com', 'East', '2025-12-03 09:00:00'),
+        ('44444444-4444-4444-4444-444444444444', 'Denis West', 'denis.west@example.com', 'West', '2025-12-04 09:00:00'),
+        ('55555555-5555-5555-5555-555555555555', 'Elena Central', 'elena.central@example.com', 'Central', '2025-12-05 09:00:00')
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO orders (id, customer_id, amount, status, created_at) VALUES
+        ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 1200.00, 'PAID', '2026-01-02 10:15:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 850.50, 'PAID', '2026-01-03 11:20:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000003', '33333333-3333-3333-3333-333333333333', 1420.99, 'PAID', '2026-01-04 12:30:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000004', '44444444-4444-4444-4444-444444444444', 300.00, 'CANCELLED', '2026-01-05 13:40:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000005', '55555555-5555-5555-5555-555555555555', 2199.90, 'PAID', '2026-01-06 14:50:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000006', '11111111-1111-1111-1111-111111111111', 760.25, 'PAID', '2026-01-07 09:10:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000007', '22222222-2222-2222-2222-222222222222', 980.75, 'PAID', '2026-01-08 10:05:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000008', '33333333-3333-3333-3333-333333333333', 640.00, 'PAID', '2026-01-09 11:45:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000009', '44444444-4444-4444-4444-444444444444', 1850.00, 'PAID', '2026-01-10 12:25:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000010', '55555555-5555-5555-5555-555555555555', 430.00, 'REFUNDED', '2026-01-11 15:35:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000011', '11111111-1111-1111-1111-111111111111', 510.10, 'PAID', '2026-01-12 16:15:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000012', '22222222-2222-2222-2222-222222222222', 1310.00, 'PAID', '2026-01-13 17:20:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000013', '33333333-3333-3333-3333-333333333333', 770.80, 'PAID', '2026-01-14 09:55:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000014', '44444444-4444-4444-4444-444444444444', 990.00, 'PAID', '2026-01-15 10:35:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000015', '55555555-5555-5555-5555-555555555555', 125.00, 'PAID', '2026-01-16 11:40:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000016', '11111111-1111-1111-1111-111111111111', 2400.00, 'PAID', '2026-01-20 12:45:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000017', '22222222-2222-2222-2222-222222222222', 670.00, 'PAID', '2026-01-23 13:50:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000018', '33333333-3333-3333-3333-333333333333', 340.00, 'PAID', '2026-01-25 14:55:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000019', '44444444-4444-4444-4444-444444444444', 1825.60, 'PAID', '2026-01-29 15:05:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000020', '55555555-5555-5555-5555-555555555555', 950.30, 'PAID', '2026-01-31 16:10:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000021', '11111111-1111-1111-1111-111111111111', 450.00, 'PAID', '2025-12-22 10:00:00'),
+        ('aaaaaaaa-0000-0000-0000-000000000022', '22222222-2222-2222-2222-222222222222', 1500.00, 'PAID', '2026-02-03 10:00:00')
+    ON CONFLICT (id) DO NOTHING;

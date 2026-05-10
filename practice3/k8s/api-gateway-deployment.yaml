@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: pdf-reports
+  labels:
+    app: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: pdf-api-gateway:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: PYTHONUNBUFFERED
+              valueFrom:
+                configMapKeyRef:
+                  name: pdf-reports-config
+                  key: PYTHONUNBUFFERED
+            - name: REPORT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: pdf-reports-config
+                  key: REPORT_SERVICE_URL
+            - name: REQUEST_TIMEOUT_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: pdf-reports-config
+                  key: REQUEST_TIMEOUT_SECONDS
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
