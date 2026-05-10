@@ -159,26 +159,11 @@ curl -X POST http://localhost:8000/api/v1/reports \
 
 Скриншот успешного прохождения `pytest`:
 
-```text
-[вставить скриншот pytest]
-```
+![alt text](image.png)
 
 Скриншот `docker compose up` с работающими сервисами:
 
-```text
-[вставить скриншот docker compose up]
-```
+![alt text](image-1.png)
 
-Скриншот примера ответа API:
 
-```text
-[вставить скриншот ответа POST /api/v1/reports или GET /api/v1/reports/<report_id>]
-```
-
-## Ограничения MVP
-
-- Реализован только один тип отчёта: `sales_summary`.
-- Авторизация не реализована, так как она не требуется для учебного MVP.
-- Kubernetes-манифесты не добавлены, они запланированы для практики №3.
-- Worker использует простой фоновый цикл с Redis Streams consumer group без сложной обработки pending-сообщений.
-- Report Service возвращает PDF через чтение объекта из MinIO в память, что нормально для небольшого учебного файла.
+Ссылка на GitHub: https://github.com/dmiganoid/Prac9_12
