@@ -1,0 +1,24 @@
+@startuml context
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title C1 — Контекстная диаграмма системы генерации PDF-отчётов
+
+LAYOUT_WITH_LEGEND()
+
+Person(user, "Пользователь", "Аналитик, менеджер или администратор, которому необходимо сформировать PDF-отчёт по данным из БД.")
+
+System(pdf_report_system, "Система генерации PDF-отчётов", "Принимает заявки на отчёты, формирует PDF-документы по данным из БД и предоставляет доступ к готовым файлам.")
+
+System_Ext(postgresql, "PostgreSQL", "Хранит бизнес-данные, параметры заявок, статусы генерации и метаданные отчётов.")
+System_Ext(redis, "Redis", "Используется как очередь задач для асинхронной генерации PDF.")
+System_Ext(minio, "MinIO", "Объектное хранилище для готовых PDF-файлов.")
+System_Ext(monitoring, "Prometheus / Grafana", "Собирает и визуализирует технические и бизнес-метрики системы.")
+
+Rel(user, pdf_report_system, "Создаёт заявку на отчёт, проверяет статус, скачивает PDF", "HTTPS / REST")
+Rel(pdf_report_system, postgresql, "Читает данные и сохраняет метаданные отчётов", "SQL")
+Rel(pdf_report_system, redis, "Публикует и получает задачи генерации", "Redis Streams")
+Rel(pdf_report_system, minio, "Сохраняет и получает PDF-файлы", "S3 API")
+Rel(monitoring, pdf_report_system, "Собирает метрики", "HTTP /metrics")
+
+@enduml

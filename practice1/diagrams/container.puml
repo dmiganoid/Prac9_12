@@ -1,0 +1,39 @@
+@startuml container
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title C2 — Контейнерная диаграмма системы генерации PDF-отчётов
+
+LAYOUT_WITH_LEGEND()
+
+Person(user, "Пользователь", "Аналитик, менеджер или администратор.")
+
+System_Boundary(pdf_report_system, "Система генерации PDF-отчётов") {
+    Container(api_gateway, "API Gateway", "Python, FastAPI", "Единая внешняя точка входа. Принимает HTTP-запросы пользователя и перенаправляет их во внутренний сервис отчётов.")
+    
+    Container(report_service, "Report Service", "Python, FastAPI", "Управляет заявками на отчёты: создаёт задачи, хранит статусы, публикует задания в очередь и отдаёт ссылки на готовые PDF.")
+    
+    Container(pdf_worker, "PDF Worker", "Python", "Асинхронно обрабатывает задачи генерации отчётов: получает данные, формирует PDF и сохраняет результат.")
+}
+
+ContainerDb_Ext(postgresql, "PostgreSQL", "PostgreSQL", "Хранит бизнес-данные, заявки на отчёты, параметры генерации, статусы и ошибки.")
+Container_Ext(redis, "Redis", "Redis Streams", "Очередь задач для фоновой генерации PDF-отчётов.")
+Container_Ext(minio, "MinIO", "S3-compatible storage", "Хранилище готовых PDF-файлов.")
+System_Ext(monitoring, "Prometheus / Grafana", "Сбор и визуализация метрик приложения.")
+
+Rel(user, api_gateway, "Создаёт заявку, запрашивает статус и скачивает отчёт", "HTTPS / REST")
+Rel(api_gateway, report_service, "Проксирует запросы управления отчётами", "HTTP / REST")
+
+Rel(report_service, postgresql, "Создаёт и читает заявки на отчёты", "SQL")
+Rel(report_service, redis, "Публикует задачу генерации отчёта", "Redis Streams")
+Rel(report_service, minio, "Получает готовый PDF для скачивания", "S3 API")
+
+Rel(pdf_worker, redis, "Получает задачу генерации", "Redis Streams")
+Rel(pdf_worker, postgresql, "Читает данные отчёта и обновляет статус заявки", "SQL")
+Rel(pdf_worker, minio, "Сохраняет сформированный PDF", "S3 API")
+
+Rel(monitoring, api_gateway, "Собирает HTTP-метрики", "HTTP /metrics")
+Rel(monitoring, report_service, "Собирает метрики заявок", "HTTP /metrics")
+Rel(monitoring, pdf_worker, "Собирает метрики генерации PDF", "HTTP /metrics")
+
+@enduml

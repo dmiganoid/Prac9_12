@@ -1,0 +1,50 @@
+@startuml component
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title C3 — Компонентная диаграмма контейнера PDF Worker
+
+LAYOUT_WITH_LEGEND()
+
+Container(report_service, "Report Service", "Python, FastAPI", "Создаёт заявки на отчёты и публикует задачи генерации.")
+ContainerDb(postgresql, "PostgreSQL", "PostgreSQL", "Хранит бизнес-данные, параметры отчётов, статусы и ошибки генерации.")
+Container(redis, "Redis", "Redis Streams", "Очередь задач генерации PDF.")
+Container(minio, "MinIO", "S3-compatible storage", "Хранилище готовых PDF-файлов.")
+System_Ext(monitoring, "Prometheus / Grafana", "Собирает и визуализирует метрики worker-а.")
+
+Container_Boundary(pdf_worker, "PDF Worker") {
+    Component(queue_consumer, "Queue Consumer", "Python module", "Получает задачи генерации отчётов из Redis.")
+    
+    Component(job_handler, "Report Job Handler", "Python service", "Управляет жизненным циклом задачи: запуск, успешное завершение, обработка ошибок.")
+    
+    Component(data_query_service, "Data Query Service", "SQLAlchemy", "Получает данные из PostgreSQL для формирования отчёта.")
+    
+    Component(template_renderer, "Template Renderer", "Jinja2", "Формирует HTML-представление отчёта на основе шаблона и данных.")
+    
+    Component(pdf_generator, "PDF Generator", "WeasyPrint / ReportLab", "Преобразует HTML-шаблон или структуру данных в PDF-файл.")
+    
+    Component(storage_client, "Storage Client", "S3 client", "Загружает готовый PDF-файл в MinIO.")
+    
+    Component(status_updater, "Report Status Updater", "SQLAlchemy", "Обновляет статус заявки: RUNNING, SUCCEEDED или FAILED.")
+    
+    Component(metrics_exporter, "Metrics Exporter", "Prometheus client", "Экспортирует метрики генерации отчётов на endpoint /metrics.")
+}
+
+Rel(report_service, redis, "Публикует задачу генерации", "Redis Streams")
+
+Rel(queue_consumer, redis, "Читает задачу генерации", "Redis Streams")
+Rel(queue_consumer, job_handler, "Передаёт задачу на обработку")
+
+Rel(job_handler, status_updater, "Фиксирует начало и завершение обработки")
+Rel(job_handler, data_query_service, "Запрашивает данные для отчёта")
+Rel(job_handler, template_renderer, "Передаёт данные для рендеринга")
+Rel(job_handler, pdf_generator, "Передаёт HTML для генерации PDF")
+Rel(job_handler, storage_client, "Передаёт PDF для сохранения")
+Rel(job_handler, metrics_exporter, "Передаёт сведения о длительности и результате генерации")
+
+Rel(data_query_service, postgresql, "Читает бизнес-данные", "SQL")
+Rel(status_updater, postgresql, "Обновляет статус и ошибку генерации", "SQL")
+Rel(storage_client, minio, "Сохраняет PDF-файл", "S3 API")
+Rel(monitoring, metrics_exporter, "Собирает метрики worker-а", "HTTP /metrics")
+
+@enduml
